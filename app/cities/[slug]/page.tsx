@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 interface CityDetailPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 // Placeholder – replace with `prisma.city.findUnique({ where: { slug } })`
@@ -40,7 +40,8 @@ async function getCity(slug: string) {
 }
 
 export async function generateMetadata({ params }: CityDetailPageProps): Promise<Metadata> {
-  const city = await getCity(params.slug);
+  const { slug } = await params;
+  const city = await getCity(slug);
   if (!city) return {};
   return {
     title: `${city.name}, ${city.country}`,
@@ -49,7 +50,8 @@ export async function generateMetadata({ params }: CityDetailPageProps): Promise
 }
 
 export default async function CityDetailPage({ params }: CityDetailPageProps) {
-  const city = await getCity(params.slug);
+  const { slug } = await params;
+  const city = await getCity(slug);
   if (!city) notFound();
 
   return (
