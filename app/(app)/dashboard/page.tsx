@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
+import CityCard from '@/components/CityCard';
+import BillingPortalButton from './_BillingPortalButton';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -13,15 +15,39 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [reviewCount, savedCount, dbUser] = await Promise.all([
+  const [reviewCount, savedCities, dbUser] = await Promise.all([
     user ? prisma.review.count({ where: { userId: user.id } }) : 0,
-    user ? prisma.savedCity.count({ where: { userId: user.id } }).catch(() => 0) : 0,
     user
-      ? prisma.user.findUnique({ where: { id: user.id }, select: { plan: true } })
+      ? prisma.savedCity.findMany({
+          where: { userId: user.id },
+          include: {
+            city: {
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                country: true,
+                costAvg: true,
+                safetyScore: true,
+                familyScore: true,
+                imageUrl: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 12,
+        })
+      : [],
+    user
+      ? prisma.user.findUnique({
+          where: { id: user.id },
+          select: { plan: true, stripeCustomerId: true },
+        })
       : null,
   ]);
 
   const plan = dbUser?.plan ?? 'FREE';
+  const savedCount = savedCities.length;
 
   return (
     <div className="container py-12">
@@ -40,6 +66,8 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-bold capitalize">{plan.toLowerCase()}</p>
         </div>
       </div>
+
+      {/* Saved cities grid */}
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-4">Saved Cities</h2>
         {savedCount === 0 ? (
@@ -50,13 +78,26 @@ export default async function DashboardPage() {
             </Link>
           </p>
         ) : (
-          <p className="text-muted-foreground">
-            <Link href="/cities" className="text-primary hover:underline">
-              Browse your saved cities →
-            </Link>
-          </p>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {savedCities.map(({ city }) => (
+              <CityCard key={city.slug} {...city} />
+            ))}
+          </div>
         )}
       </div>
+
+      {/* PRO subscription management */}
+      {plan === 'PRO' && dbUser?.stripeCustomerId && (
+        <div className="mt-8 rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-1">Subscription</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            You&apos;re on the Pro plan. Manage billing, update payment methods,
+            or cancel anytime.
+          </p>
+          <BillingPortalButton />
+        </div>
+      )}
+
       {plan === 'FREE' && (
         <div className="mt-8 rounded-lg border border-primary/30 bg-primary/5 p-6">
           <h2 className="text-lg font-semibold mb-1">Upgrade to Pro</h2>

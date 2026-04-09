@@ -51,6 +51,22 @@ export default async function CityDetailPage({ params }: CityDetailPageProps) {
 
   const isPro = dbUser?.plan === 'PRO';
 
+  // Server-side paywall: withhold gated data for non-PRO users so it
+  // cannot be extracted from the page source / JS bundle.
+  const FREE_REVIEW_LIMIT = 2;
+  const hubs = isPro ? cityData.hubs : [];
+  const visaInfo = isPro ? cityData.visaInfo : [];
+  const reviews = isPro
+    ? cityData.reviews
+    : cityData.reviews.slice(0, FREE_REVIEW_LIMIT);
+  const costMin = isPro ? cityData.costMin : null;
+  const costMax = isPro ? cityData.costMax : null;
+  const homeschoolLegal = isPro ? cityData.homeschoolLegal : null;
+  const homeschoolNotes = isPro ? cityData.homeschoolNotes : null;
+  const familyVisaAvailable = isPro ? cityData.familyVisaAvailable : null;
+  const internetScore = isPro ? cityData.internetScore : null;
+  const aqiAvg = isPro ? cityData.aqiAvg : null;
+
   return (
     <div className="container py-12 max-w-4xl">
       <div className="mb-6">
@@ -63,19 +79,19 @@ export default async function CityDetailPage({ params }: CityDetailPageProps) {
 
       <CityTabs
         cityId={cityData.id}
-        costMin={cityData.costMin}
+        costMin={costMin}
         costAvg={cityData.costAvg}
-        costMax={cityData.costMax}
-        aqiAvg={cityData.aqiAvg}
+        costMax={costMax}
+        aqiAvg={aqiAvg}
         safetyScore={cityData.safetyScore}
         familyScore={cityData.familyScore}
-        internetScore={cityData.internetScore}
-        homeschoolLegal={cityData.homeschoolLegal}
-        homeschoolNotes={cityData.homeschoolNotes}
-        familyVisaAvailable={cityData.familyVisaAvailable}
-        hubs={cityData.hubs}
-        reviews={cityData.reviews}
-        visaInfo={cityData.visaInfo}
+        internetScore={internetScore}
+        homeschoolLegal={homeschoolLegal}
+        homeschoolNotes={homeschoolNotes}
+        familyVisaAvailable={familyVisaAvailable}
+        hubs={hubs}
+        reviews={reviews}
+        visaInfo={visaInfo}
         isPro={isPro}
         currentUserId={user?.id ?? null}
       />
