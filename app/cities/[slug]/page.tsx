@@ -25,31 +25,41 @@ export async function generateMetadata({ params }: CityDetailPageProps): Promise
 export default async function CityDetailPage({ params }: CityDetailPageProps) {
   const { slug } = await params;
 
-  const [cityData, supabase] = await Promise.all([
-    prisma.city.findUnique({
-      where: { slug },
-      include: {
-        hubs: { take: 20 },
-        reviews: {
-          include: { user: { select: { id: true, name: true, avatarUrl: true } } },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        },
-        visaInfo: { take: 50 },
+  const cityData = await prisma.city.findUnique({
+    where: { slug },
+    include: {
+      hubs: { take: 20 },
+      reviews: {
+        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
       },
-    }),
-    createServerSupabaseClient(),
-  ]);
+      visaInfo: { take: 50 },
+    },
+  });
 
   if (!cityData) notFound();
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const dbUser = user
-    ? await prisma.user.findUnique({ where: { id: user.id }, select: { plan: true } })
-    : null;
-
-  const isPro = dbUser?.plan === 'PRO';
+  // Auth is best-effort: if Supabase is unavailable the page still renders
+  // as an unauthenticated (free-tier) visitor — the same pattern used in Nav.
+  let user = null;
+  let isPro = false;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+    if (user) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { plan: true },
+      });
+      isPro = dbUser?.plan === 'PRO';
+    }
+  } catch (err) {
+    // Auth check failed (e.g. missing env vars, network error, users table not yet seeded).
+    // Render as unauthenticated free-tier visitor.
+    console.error('City page auth check failed:', err);
+  }
 
   // Server-side paywall: withhold gated data for non-PRO users so it
   // cannot be extracted from the page source / JS bundle.
