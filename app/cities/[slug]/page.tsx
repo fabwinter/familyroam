@@ -63,7 +63,6 @@ export default async function CityDetailPage({ params }: CityDetailPageProps) {
 
       <CityTabs
         cityId={cityData.id}
-        citySlug={cityData.slug}
         costMin={cityData.costMin}
         costAvg={cityData.costAvg}
         costMax={cityData.costMax}
