@@ -1,38 +1,43 @@
 import type { Metadata } from 'next';
+import fs from 'fs';
+import path from 'path';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Blog',
   description: 'Tips, guides, and stories for families living abroad.',
 };
 
-const posts = [
-  {
-    slug: 'top-10-cities-for-families-2024',
-    title: 'Top 10 Cities for Families in 2024',
-    excerpt:
-      'We crunched data from thousands of expat families to find the very best cities for raising kids abroad this year.',
-    date: '2024-04-01',
-    author: 'FamilyRoam Team',
-  },
-  {
-    slug: 'how-to-choose-a-family-friendly-city',
-    title: 'How to Choose a Family-Friendly City Abroad',
-    excerpt:
-      'Safety, schooling, healthcare, cost of living — here's a practical framework for making your next big move.',
-    date: '2024-03-15',
-    author: 'FamilyRoam Team',
-  },
-  {
-    slug: 'visa-guide-for-digital-nomad-families',
-    title: 'The Visa Guide for Digital Nomad Families',
-    excerpt:
-      'Navigating visas with kids in tow is tricky. This guide breaks down the best options by region.',
-    date: '2024-02-28',
-    author: 'FamilyRoam Team',
-  },
-];
+interface PostMeta {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+}
+
+function getBlogPosts(): PostMeta[] {
+  const dir = path.join(process.cwd(), 'content/blog');
+  if (!fs.existsSync(dir)) return [];
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.mdx'));
+  const posts: PostMeta[] = files.map((file) => {
+    const slug = file.replace(/\.mdx$/, '');
+    const content = fs.readFileSync(path.join(dir, file), 'utf-8');
+    const titleMatch = content.match(/title:\s*['"]([^'"]+)['"]/);
+    const descMatch = content.match(/description:\s*['"]([^'"]+)['"]/);
+    const dateMatch = content.match(/date:\s*['"]([^'"]+)['"]/);
+    return {
+      slug,
+      title: titleMatch?.[1] ?? slug,
+      description: descMatch?.[1] ?? '',
+      date: dateMatch?.[1] ?? '',
+    };
+  });
+  return posts.sort((a, b) => b.date.localeCompare(a.date));
+}
 
 export default function BlogPage() {
+  const posts = getBlogPosts();
+
   return (
     <div className="container py-20 max-w-3xl">
       <h1 className="text-4xl font-bold mb-2">Blog</h1>
@@ -42,25 +47,29 @@ export default function BlogPage() {
       <div className="space-y-10">
         {posts.map((post) => (
           <article key={post.slug} className="border-b pb-10">
-            <time className="text-sm text-muted-foreground">
-              {new Date(post.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </time>
+            {post.date && (
+              <time className="text-sm text-muted-foreground">
+                {new Date(post.date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
+            )}
             <h2 className="text-2xl font-semibold mt-1 mb-2">
-              <a href={`/blog/${post.slug}`} className="hover:underline">
+              <Link href={`/blog/${post.slug}`} className="hover:underline">
                 {post.title}
-              </a>
+              </Link>
             </h2>
-            <p className="text-muted-foreground">{post.excerpt}</p>
-            <a
+            {post.description && (
+              <p className="text-muted-foreground">{post.description}</p>
+            )}
+            <Link
               href={`/blog/${post.slug}`}
               className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
             >
               Read more →
-            </a>
+            </Link>
           </article>
         ))}
       </div>

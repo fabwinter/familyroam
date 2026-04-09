@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase';
+import CityTabs from '@/components/CityTabs';
 
 interface CityDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -8,52 +10,73 @@ interface CityDetailPageProps {
 
 export async function generateMetadata({ params }: CityDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const city = await prisma.city.findUnique({ where: { slug } });
+  const city = await prisma.city.findUnique({ where: { slug }, select: { name: true, country: true, description: true } });
   if (!city) return {};
   return {
     title: `${city.name}, ${city.country}`,
     description: city.description ?? undefined,
+    openGraph: {
+      title: `${city.name}, ${city.country} — FamilyRoam`,
+      description: city.description ?? undefined,
+    },
   };
 }
 
 export default async function CityDetailPage({ params }: CityDetailPageProps) {
   const { slug } = await params;
-  const city = await prisma.city.findUnique({ where: { slug } });
-  if (!city) notFound();
+
+  const [cityData, supabase] = await Promise.all([
+    prisma.city.findUnique({
+      where: { slug },
+      include: {
+        hubs: { take: 20 },
+        reviews: {
+          include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        },
+        visaInfo: { take: 50 },
+      },
+    }),
+    createServerSupabaseClient(),
+  ]);
+
+  if (!cityData) notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const dbUser = user
+    ? await prisma.user.findUnique({ where: { id: user.id }, select: { plan: true } })
+    : null;
+
+  const isPro = dbUser?.plan === 'PRO';
 
   return (
     <div className="container py-12 max-w-4xl">
       <div className="mb-6">
-        <p className="text-sm text-muted-foreground">{city.country}</p>
-        <h1 className="text-4xl font-bold">{city.name}</h1>
+        <p className="text-sm text-muted-foreground">{cityData.country}</p>
+        <h1 className="text-4xl font-bold">{cityData.name}</h1>
       </div>
-      {city.description && (
-        <p className="text-lg text-muted-foreground mb-10">{city.description}</p>
+      {cityData.description && (
+        <p className="text-lg text-muted-foreground mb-10">{cityData.description}</p>
       )}
-      <div className="grid sm:grid-cols-3 gap-6 mb-12">
-        <div className="rounded-lg border bg-card p-5 text-center">
-          <p className="text-sm text-muted-foreground">Avg. Monthly Cost</p>
-          <p className="text-2xl font-bold mt-1">
-            {city.costAvg != null ? `$${city.costAvg.toLocaleString()}` : '—'}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-5 text-center">
-          <p className="text-sm text-muted-foreground">Safety Score</p>
-          <p className="text-2xl font-bold mt-1">
-            {city.safetyScore != null ? `${city.safetyScore}/100` : '—'}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-5 text-center">
-          <p className="text-sm text-muted-foreground">Family Score</p>
-          <p className="text-2xl font-bold mt-1">
-            {city.familyScore != null ? `${city.familyScore}/100` : '—'}
-          </p>
-        </div>
-      </div>
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Community Reviews</h2>
-        <p className="text-muted-foreground">No reviews yet. Be the first!</p>
-      </section>
+
+      <CityTabs
+        cityId={cityData.id}
+        citySlug={cityData.slug}
+        costMin={cityData.costMin}
+        costAvg={cityData.costAvg}
+        costMax={cityData.costMax}
+        aqiAvg={cityData.aqiAvg}
+        safetyScore={cityData.safetyScore}
+        familyScore={cityData.familyScore}
+        internetScore={cityData.internetScore}
+        hubs={cityData.hubs}
+        reviews={cityData.reviews}
+        visaInfo={cityData.visaInfo}
+        isPro={isPro}
+        currentUserId={user?.id ?? null}
+      />
     </div>
   );
 }

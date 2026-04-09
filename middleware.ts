@@ -27,15 +27,26 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
+  // Unauthenticated: redirect to login
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
+  // Admin routes: restrict to ADMIN_EMAIL
+  if (pathname.startsWith('/admin')) {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail || user.email !== adminEmail) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/planner/:path*'],
+  matcher: ['/dashboard/:path*', '/planner/:path*', '/admin/:path*'],
 };
