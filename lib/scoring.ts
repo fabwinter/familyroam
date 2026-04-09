@@ -72,5 +72,8 @@ export function computeFamilyScore(input: ScoringInput): number | null {
   const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
   const weightedSum = candidates.reduce((sum, c) => sum + c.value * c.weight, 0);
 
-  return Math.round((weightedSum / totalWeight) * 1000) / 10; // one decimal, 0-100
+  // Round to one decimal place (e.g. 73.4)
+  const PRECISION_MULTIPLIER = 1000;
+  const PRECISION_DIVISOR = 10;
+  return Math.round((weightedSum / totalWeight) * PRECISION_MULTIPLIER) / PRECISION_DIVISOR;
 }

@@ -165,7 +165,7 @@ redistributed across the available components.
 |---|---|---|
 | Safety score | 35 % | Direct 0–100 field from Teleport |
 | Air quality (AQI) | 25 % | Inverted: AQI 0 → 100 pts, AQI 300+ → 0 pts |
-| Cost of living | 15 % | Inverted: $500/mo → 100 pts, $10 000/mo → 0 pts |
+| Cost of living | 15 % | Inverted: $500/mo → 100 pts, $10,000/mo → 0 pts |
 | Internet score | 15 % | Direct 0–100 field from Teleport |
 | Quality of life | 10 % | Direct 0–100 field from Teleport |
 
