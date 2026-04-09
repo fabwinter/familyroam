@@ -22,6 +22,8 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
+      // Ensure Prisma user row exists (idempotent)
+      await fetch('/api/auth/sync-user', { method: 'POST' });
       router.push('/dashboard');
     }
   }
