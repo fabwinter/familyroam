@@ -8,10 +8,16 @@ const links = [
 ];
 
 export default async function Nav() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (error) {
+    // Auth check failed (e.g. missing env vars, network error).
+    // Render nav as unauthenticated.
+    console.error('Nav auth check failed:', error);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">

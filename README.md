@@ -10,7 +10,7 @@ FamilyRoam helps families living abroad discover the best cities worldwide, rank
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 15 (App Router) |
 | Styling | Tailwind CSS + shadcn/ui |
 | Database | Supabase (PostgreSQL) + Prisma ORM |
 | Auth | Supabase Auth |
