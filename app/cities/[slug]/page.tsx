@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: CityDetailPageProps): Promise
     title: `${city.name}, ${city.country}`,
     description: city.description ?? undefined,
     openGraph: {
-      title: `${city.name}, ${city.country} — FamilyRoam`,
+      title: `${city.name}, ${city.country} — Roaming Families`,
       description: city.description ?? undefined,
     },
   };
