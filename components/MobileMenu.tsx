@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 interface MobileMenuProps {
@@ -10,13 +10,58 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ links, isAuthenticated }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    buttonRef.current?.focus();
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') close();
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, close]);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        close();
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open, close]);
+
+  // Focus first link when menu opens
+  useEffect(() => {
+    if (open && menuRef.current) {
+      const first = menuRef.current.querySelector<HTMLElement>('a, button');
+      first?.focus();
+    }
+  }, [open]);
 
   return (
     <div className="md:hidden">
       <button
+        ref={buttonRef}
         onClick={() => setOpen(!open)}
         className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        aria-controls="mobile-nav-menu"
       >
         {open ? (
           <svg
@@ -53,13 +98,20 @@ export default function MobileMenu({ links, isAuthenticated }: MobileMenuProps) 
       </button>
 
       {open && (
-        <div className="absolute top-16 left-0 right-0 bg-background border-b shadow-lg z-50">
+        <div
+          id="mobile-nav-menu"
+          ref={menuRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+          className="absolute top-16 left-0 right-0 bg-background border-b shadow-lg z-50"
+        >
           <nav className="container py-4 flex flex-col gap-3">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={() => close()}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
               >
                 {link.label}
@@ -70,14 +122,14 @@ export default function MobileMenu({ links, isAuthenticated }: MobileMenuProps) 
               <>
                 <Link
                   href="/dashboard"
-                  onClick={() => setOpen(false)}
+                  onClick={() => close()}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/planner"
-                  onClick={() => setOpen(false)}
+                  onClick={() => close()}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
                   Trip Planner
@@ -95,14 +147,14 @@ export default function MobileMenu({ links, isAuthenticated }: MobileMenuProps) 
               <>
                 <Link
                   href="/auth/login"
-                  onClick={() => setOpen(false)}
+                  onClick={() => close()}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/auth/signup"
-                  onClick={() => setOpen(false)}
+                  onClick={() => close()}
                   className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
                   Get started
