@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import SaveCityButton from '@/components/SaveCityButton';
+import { unsplashCityUrl } from '@/lib/utils';
 
 interface CityCardProps {
   id?: string;
@@ -22,22 +23,20 @@ export default function CityCard({
   familyScore,
   imageUrl,
 }: CityCardProps) {
+  const imgSrc = imageUrl ?? unsplashCityUrl(name, country);
+
   return (
     <Link
       href={`/cities/${slug}`}
       className="group relative block rounded-xl border bg-card overflow-hidden hover:shadow-md transition-shadow"
     >
       <div className="h-40 bg-muted flex items-center justify-center overflow-hidden">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-          />
-        ) : (
-          <span className="text-4xl">🌍</span>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imgSrc}
+          alt={name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+        />
       </div>
       {id && <SaveCityButton cityId={id} />}
       <div className="p-4">

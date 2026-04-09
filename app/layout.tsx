@@ -4,8 +4,8 @@ import Nav from '@/components/Nav';
 
 export const metadata: Metadata = {
   title: {
-    default: 'FamilyRoam – Find your perfect family-friendly city',
-    template: '%s | FamilyRoam',
+    default: 'Roaming Families – Find your perfect family-friendly city',
+    template: '%s | Roaming Families',
   },
   description:
     'Discover the best cities for families living abroad. Compare cost of living, safety, schools, and more.',

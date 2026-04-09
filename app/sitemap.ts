@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 
 export const dynamic = 'force-dynamic';
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://familyroam.com';
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://roamingfamilies.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const cities = await prisma.city.findMany({

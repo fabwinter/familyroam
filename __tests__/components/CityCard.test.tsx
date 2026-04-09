@@ -36,9 +36,11 @@ describe('CityCard', () => {
     expect(link).toHaveAttribute('href', '/cities/lisbon');
   });
 
-  it('renders a globe emoji placeholder when no imageUrl is provided', () => {
+  it('renders a fallback image when no imageUrl is provided', () => {
     render(<CityCard {...baseProps} />);
-    expect(screen.getByText('🌍')).toBeInTheDocument();
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('src', expect.stringMatching(/picsum\.photos|unsplash\.com/));
+    expect(img).toHaveAttribute('alt', 'Lisbon');
   });
 
   it('renders an img tag when imageUrl is provided', () => {
@@ -46,7 +48,6 @@ describe('CityCard', () => {
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('src', 'https://example.com/lisbon.jpg');
     expect(img).toHaveAttribute('alt', 'Lisbon');
-    expect(screen.queryByText('🌍')).not.toBeInTheDocument();
   });
 
   it('shows costAvg when provided', () => {

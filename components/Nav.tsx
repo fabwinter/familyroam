@@ -24,7 +24,7 @@ export default async function Nav() {
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="text-xl font-bold tracking-tight">
-          FamilyRoam
+          Roaming Families
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           {links.map((link) => (

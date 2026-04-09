@@ -11,6 +11,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { computeFamilyScore } from '../lib/scoring';
+import { fetchUnsplashCityImageUrl, unsplashCityUrl } from '../lib/utils';
 
 const prisma = new PrismaClient();
 
@@ -403,10 +404,14 @@ async function main() {
       qualityOfLife: city.qualityOfLife,
     });
 
+    const imageUrl =
+      (await fetchUnsplashCityImageUrl(city.name, city.country)) ??
+      unsplashCityUrl(city.name, city.country);
+
     await prisma.city.upsert({
       where: { slug: city.slug },
-      create: { ...city, familyScore },
-      update: { ...city, familyScore },
+      create: { ...city, familyScore, imageUrl },
+      update: { ...city, familyScore, imageUrl },
     });
 
     console.log(

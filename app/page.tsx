@@ -7,7 +7,7 @@ export default function HomePage() {
         Find your family&apos;s next home base
       </h1>
       <p className="text-xl text-muted-foreground max-w-2xl mb-8">
-        FamilyRoam helps families living abroad discover the best cities
+        Roaming Families helps families living abroad discover the best cities
         worldwide — ranked by safety, cost of living, schools, and more.
       </p>
       <div className="flex gap-4">
