@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 
@@ -44,15 +45,15 @@ export default async function DashboardPage() {
         {savedCount === 0 ? (
           <p className="text-muted-foreground">
             You haven&apos;t saved any cities yet.{' '}
-            <a href="/cities" className="text-primary hover:underline">
+            <Link href="/cities" className="text-primary hover:underline">
               Explore cities →
-            </a>
+            </Link>
           </p>
         ) : (
           <p className="text-muted-foreground">
-            <a href="/cities" className="text-primary hover:underline">
+            <Link href="/cities" className="text-primary hover:underline">
               Browse your saved cities →
-            </a>
+            </Link>
           </p>
         )}
       </div>

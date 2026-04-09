@@ -38,7 +38,6 @@ interface VisaInfo {
 
 interface CityTabsProps {
   cityId: string;
-  citySlug: string;
   costMin: number | null;
   costAvg: number | null;
   costMax: number | null;
@@ -73,7 +72,6 @@ function ScoreBar({ label, value }: { label: string; value: number | null }) {
 
 export default function CityTabs({
   cityId,
-  citySlug,
   costMin,
   costAvg,
   costMax,
