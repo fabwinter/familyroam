@@ -65,6 +65,11 @@ model City {
   // Air quality (AQI)
   aqiAvg          Float?
 
+  // Family-specific data
+  homeschoolLegal      Boolean?
+  homeschoolNotes      String?
+  familyVisaAvailable  Boolean?
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -126,6 +131,8 @@ model Review {
   title       String?
   body        String
   visitedAt   DateTime?
+  familySize  Int?     // number of people in the family
+  kidsAges    String[] // age ranges e.g. ["0-2", "6-12"]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -10,21 +10,34 @@ export default function FilterSidebar() {
   const [maxCost, setMaxCost] = useState(() => Number(searchParams.get('maxCost') ?? 10000));
   const [minSafety, setMinSafety] = useState(() => Number(searchParams.get('minSafety') ?? 0));
   const [continent, setContinent] = useState(() => searchParams.get('continent') ?? '');
+  const [sortBy, setSortBy] = useState(() => searchParams.get('sortBy') ?? 'familyScore');
 
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   function buildParams(overrides: Record<string, string>) {
     const p = new URLSearchParams();
-    const merged = { continent, maxCost: String(maxCost), minSafety: String(minSafety), ...overrides };
+    const merged = {
+      continent,
+      maxCost: String(maxCost),
+      minSafety: String(minSafety),
+      sortBy,
+      ...overrides,
+    };
     if (merged.continent) p.set('continent', merged.continent);
     if (Number(merged.maxCost) < 10000) p.set('maxCost', merged.maxCost);
     if (Number(merged.minSafety) > 0) p.set('minSafety', merged.minSafety);
+    if (merged.sortBy && merged.sortBy !== 'familyScore') p.set('sortBy', merged.sortBy);
     return p.toString();
   }
 
   function handleContinentChange(value: string) {
     setContinent(value);
     router.push('/cities?' + buildParams({ continent: value }));
+  }
+
+  function handleSortChange(value: string) {
+    setSortBy(value);
+    router.push('/cities?' + buildParams({ sortBy: value }));
   }
 
   function handleSliderChange(field: 'maxCost' | 'minSafety', value: number) {
@@ -44,11 +57,26 @@ export default function FilterSidebar() {
     setMaxCost(10000);
     setMinSafety(0);
     setContinent('');
+    setSortBy('familyScore');
     router.push('/cities');
   }
 
   return (
     <div className="space-y-6">
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Sort by</h3>
+        <select
+          value={sortBy}
+          onChange={(e) => handleSortChange(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="familyScore">Family Score</option>
+          <option value="safety">Safety</option>
+          <option value="cost">Cost (low to high)</option>
+          <option value="aqi">Air Quality (AQI)</option>
+        </select>
+      </div>
+
       <div>
         <h3 className="text-sm font-semibold mb-3">Continent</h3>
         <select

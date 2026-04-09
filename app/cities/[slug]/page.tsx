@@ -70,6 +70,9 @@ export default async function CityDetailPage({ params }: CityDetailPageProps) {
         safetyScore={cityData.safetyScore}
         familyScore={cityData.familyScore}
         internetScore={cityData.internetScore}
+        homeschoolLegal={cityData.homeschoolLegal}
+        homeschoolNotes={cityData.homeschoolNotes}
+        familyVisaAvailable={cityData.familyVisaAvailable}
         hubs={cityData.hubs}
         reviews={cityData.reviews}
         visaInfo={cityData.visaInfo}
