@@ -30,25 +30,40 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
   };
   const sort = (sortBy && VALID_SORT[sortBy]) ? VALID_SORT[sortBy] : VALID_SORT.familyScore;
 
-  const cities = await prisma.city.findMany({
-    where: {
-      ...(continent ? { continent: { equals: continent, mode: 'insensitive' } } : {}),
-      ...(maxCost ? { costAvg: { lte: Number(maxCost) } } : {}),
-      ...(minSafety ? { safetyScore: { gte: Number(minSafety) } } : {}),
-    },
-    orderBy: { [sort.field]: sort.order },
-    take: 100,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      country: true,
-      costAvg: true,
-      safetyScore: true,
-      familyScore: true,
-      imageUrl: true,
-    },
-  });
+  let cities: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    country: string;
+    costAvg: number | null;
+    safetyScore: number | null;
+    familyScore: number | null;
+    imageUrl: string | null;
+  }> = [];
+
+  try {
+    cities = await prisma.city.findMany({
+      where: {
+        ...(continent ? { continent: { equals: continent, mode: 'insensitive' } } : {}),
+        ...(maxCost ? { costAvg: { lte: Number(maxCost) } } : {}),
+        ...(minSafety ? { safetyScore: { gte: Number(minSafety) } } : {}),
+      },
+      orderBy: { [sort.field]: sort.order },
+      take: 100,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        country: true,
+        costAvg: true,
+        safetyScore: true,
+        familyScore: true,
+        imageUrl: true,
+      },
+    });
+  } catch (err) {
+    console.error('Cities page: database query failed:', err);
+  }
 
   return (
     <div className="container py-10">
@@ -65,7 +80,11 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
         <div className="flex-1 grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {cities.length === 0 ? (
             <p className="text-muted-foreground col-span-full">
-              No cities match your filters.
+              No cities found. Check back soon or{' '}
+              <a href="/auth/signup" className="text-primary hover:underline">
+                sign up
+              </a>{' '}
+              to get notified when cities are added.
             </p>
           ) : (
             cities.map((city) => <CityCard key={city.slug} {...city} />)

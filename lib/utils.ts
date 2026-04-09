@@ -20,23 +20,13 @@ export function slugify(text: string): string {
 }
 
 /**
- * Build an Unsplash image URL for a city using the official Unsplash API.
+ * Return a deterministic placeholder image URL for a city using picsum.photos.
  *
- * Requires NEXT_PUBLIC_UNSPLASH_ACCESS_KEY to be set.
- * Falls back to a deterministic placeholder from picsum.photos when the key
- * is not available (useful during local dev and testing).
- *
- * The Unsplash API returns a direct CDN image URL via the `urls.regular` field.
- * This helper returns a URL you can embed in an <img> tag after the API call;
- * use `fetchUnsplashCityImageUrl` for server-side ingestion instead.
+ * This is used as a client-side fallback when a city has no stored imageUrl.
+ * The seed uses the async `fetchUnsplashCityImageUrl` to store real Unsplash
+ * CDN URLs in the database; this function is purely a render-time fallback.
  */
-export function unsplashCityUrl(cityName: string, _country: string, width = 800, height = 480): string {
-  const accessKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
-  if (accessKey) {
-    const query = encodeURIComponent(`${cityName} city travel`);
-    return `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&client_id=${accessKey}&w=${width}&h=${height}`;
-  }
-  // Deterministic picsum.photos placeholder — stable, free, no key required.
+export function unsplashCityUrl(cityName: string, width = 800, height = 480): string {
   const seed = encodeURIComponent(cityName.toLowerCase().replace(/\s+/g, '-'));
   return `https://picsum.photos/seed/${seed}/${width}/${height}`;
 }

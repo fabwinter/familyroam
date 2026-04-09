@@ -406,7 +406,7 @@ async function main() {
 
     const imageUrl =
       (await fetchUnsplashCityImageUrl(city.name, city.country)) ??
-      unsplashCityUrl(city.name, city.country);
+      unsplashCityUrl(city.name);
 
     await prisma.city.upsert({
       where: { slug: city.slug },

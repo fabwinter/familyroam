@@ -19,6 +19,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'teleport.org',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
     ],
   },
 };

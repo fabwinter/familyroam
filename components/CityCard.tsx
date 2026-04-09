@@ -23,7 +23,7 @@ export default function CityCard({
   familyScore,
   imageUrl,
 }: CityCardProps) {
-  const imgSrc = imageUrl ?? unsplashCityUrl(name, country);
+  const imgSrc = imageUrl ?? unsplashCityUrl(name);
 
   return (
     <Link
