@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  stripeCustomerId String? @unique
+  plan          Plan      @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  reviews       Review[]
+  savedHubs     SavedHub[]
+
+  @@map("users")
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+// ─── Cities ───────────────────────────────────────────────────────────────────
+
+model City {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  name            String
+  country         String
+  countryCode     String    @db.Char(2)
+  continent       String?
+  latitude        Float
+  longitude       Float
+  population      Int?
+  imageUrl        String?
+  description     String?
+
+  // Cost of living (USD/month)
+  costMin         Int?
+  costMax         Int?
+  costAvg         Int?
+
+  // Quality scores (0–100)
+  safetyScore     Float?
+  internetScore   Float?
+  qualityOfLife   Float?
+  familyScore     Float?
+
+  // Air quality (AQI)
+  aqiAvg          Float?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  hubs            Hub[]
+  reviews         Review[]
+  visaInfo        VisaInfo[]
+
+  @@map("cities")
+}
+
+// ─── Hubs (co-living / coliving spaces) ──────────────────────────────────────
+
+model Hub {
+  id          String   @id @default(uuid())
+  cityId      String
+  name        String
+  slug        String   @unique
+  description String?
+  website     String?
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  priceMin    Int?
+  priceMax    Int?
+  currency    String   @default("USD")
+  amenities   String[]
+  imageUrl    String?
+  sourceUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  city        City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  savedBy     SavedHub[]
+
+  @@map("hubs")
+}
+
+model SavedHub {
+  userId    String
+  hubId     String
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hub       Hub  @relation(fields: [hubId], references: [id], onDelete: Cascade)
+
+  @@id([userId, hubId])
+  @@map("saved_hubs")
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(uuid())
+  cityId      String
+  userId      String
+  rating      Int      // 1–5
+  title       String?
+  body        String
+  visitedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  city        City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+// ─── Visa Information ─────────────────────────────────────────────────────────
+
+model VisaInfo {
+  id              String   @id @default(uuid())
+  cityId          String
+  passportCountry String   @db.Char(2)  // ISO 3166-1 alpha-2
+  visaRequired    Boolean
+  stayDays        Int?     // max stay in days without visa
+  visaType        String?  // e.g. "visa-on-arrival", "e-visa", "visa-free"
+  notes           String?
+  sourceUrl       String?
+  updatedAt       DateTime @updatedAt
+
+  city            City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([cityId, passportCountry])
+  @@map("visa_info")
+}
