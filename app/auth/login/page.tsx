@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
+      // Ensure Prisma user row exists (idempotent)
+      await fetch('/api/auth/sync-user', { method: 'POST' });
       router.push('/dashboard');
     }
   }

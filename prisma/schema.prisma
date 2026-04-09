@@ -25,6 +25,7 @@ model User {
 
   reviews       Review[]
   savedHubs     SavedHub[]
+  savedCities   SavedCity[]
 
   @@map("users")
 }
@@ -69,6 +70,7 @@ model City {
   hubs            Hub[]
   reviews         Review[]
   visaInfo        VisaInfo[]
+  savedBy         SavedCity[]
 
   @@map("cities")
 }
@@ -91,6 +93,7 @@ model Hub {
   amenities   String[]
   imageUrl    String?
   sourceUrl   String?
+  verified    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -148,4 +151,18 @@ model VisaInfo {
 
   @@unique([cityId, passportCountry])
   @@map("visa_info")
+}
+
+// ─── Saved Cities ─────────────────────────────────────────────────────────────
+
+model SavedCity {
+  userId    String
+  cityId    String
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city      City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cityId])
+  @@map("saved_cities")
 }
