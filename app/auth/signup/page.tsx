@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-browser';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');

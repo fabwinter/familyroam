@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import type { MetadataRoute } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://familyroam.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
