@@ -15,7 +15,8 @@
     "ingest:teleport": "ts-node --project tsconfig.scripts.json scripts/ingest-teleport.ts",
     "ingest:numbeo": "ts-node --project tsconfig.scripts.json scripts/ingest-numbeo.ts",
     "ingest:iqair": "ts-node --project tsconfig.scripts.json scripts/ingest-iqair.ts",
-    "ingest:osm": "ts-node --project tsconfig.scripts.json scripts/ingest-osm.ts"
+    "ingest:osm": "ts-node --project tsconfig.scripts.json scripts/ingest-osm.ts",
+    "ingest:backfill": "ts-node --project tsconfig.scripts.json scripts/backfill-scores.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

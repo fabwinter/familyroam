@@ -14,11 +14,21 @@ interface CitiesPageProps {
     continent?: string;
     maxCost?: string;
     minSafety?: string;
+    sortBy?: string;
   }>;
 }
 
 export default async function CitiesPage({ searchParams }: CitiesPageProps) {
-  const { continent, maxCost, minSafety } = await searchParams;
+  const { continent, maxCost, minSafety, sortBy } = await searchParams;
+
+  type SortField = 'familyScore' | 'costAvg' | 'safetyScore' | 'aqiAvg';
+  const VALID_SORT: Record<string, { field: SortField; order: 'asc' | 'desc' }> = {
+    familyScore: { field: 'familyScore', order: 'desc' },
+    cost: { field: 'costAvg', order: 'asc' },
+    safety: { field: 'safetyScore', order: 'desc' },
+    aqi: { field: 'aqiAvg', order: 'asc' },
+  };
+  const sort = (sortBy && VALID_SORT[sortBy]) ? VALID_SORT[sortBy] : VALID_SORT.familyScore;
 
   const cities = await prisma.city.findMany({
     where: {
@@ -26,7 +36,7 @@ export default async function CitiesPage({ searchParams }: CitiesPageProps) {
       ...(maxCost ? { costAvg: { lte: Number(maxCost) } } : {}),
       ...(minSafety ? { safetyScore: { gte: Number(minSafety) } } : {}),
     },
-    orderBy: { familyScore: 'desc' },
+    orderBy: { [sort.field]: sort.order },
     take: 100,
     select: {
       id: true,
