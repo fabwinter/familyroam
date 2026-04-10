@@ -104,9 +104,12 @@ export function getResendApiKey() {
 export function validateEnv() {
   // Core infrastructure — server must not start without these.
   getDatabaseUrl();
-  getDirectUrl();
   getSupabaseServiceRoleKey();
-  getAdminEmail();
+
+  // Note: getDirectUrl() is intentionally omitted — DIRECT_URL is only used
+  // by `prisma migrate` and is not needed at runtime.
+  // Note: getAdminEmail() is intentionally omitted — ADMIN_EMAIL is read
+  // directly in middleware and gracefully redirects if absent.
 
   // Core public vars.
   const requiredPublic: Array<[string, string]> = [
