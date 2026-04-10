@@ -102,16 +102,13 @@ export function getResendApiKey() {
  * not at the first request.
  */
 export function validateEnv() {
-  // Server-only
+  // Core infrastructure — server must not start without these.
   getDatabaseUrl();
   getDirectUrl();
   getSupabaseServiceRoleKey();
-  getStripeSecretKey();
-  getStripeWebhookSecret();
   getAdminEmail();
-  getResendApiKey();
 
-  // Public (required at runtime despite NEXT_PUBLIC_ build-time baking)
+  // Core public vars.
   const requiredPublic: Array<[string, string]> = [
     [
       'NEXT_PUBLIC_SUPABASE_URL',
@@ -120,14 +117,6 @@ export function validateEnv() {
     [
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'Supabase → Settings → API → Project API keys → anon / public',
-    ],
-    [
-      'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
-      'Stripe Dashboard → Developers → API keys → Publishable key',
-    ],
-    [
-      'NEXT_PUBLIC_STRIPE_PRO_PRICE_ID',
-      'Stripe Dashboard → Products → FamilyRoam Pro → Pricing → Price ID',
     ],
     [
       'NEXT_PUBLIC_APP_URL',
@@ -144,4 +133,7 @@ export function validateEnv() {
       );
     }
   }
+
+  // Stripe and Resend are validated lazily — their getters throw only when the
+  // relevant API routes are actually called. Add them back here once configured.
 }
