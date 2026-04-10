@@ -38,7 +38,6 @@ interface VisaInfo {
 
 interface CityTabsProps {
   cityId: string;
-  citySlug: string;
   costMin: number | null;
   costAvg: number | null;
   costMax: number | null;
@@ -46,6 +45,9 @@ interface CityTabsProps {
   safetyScore: number | null;
   familyScore: number | null;
   internetScore: number | null;
+  homeschoolLegal: boolean | null;
+  homeschoolNotes: string | null;
+  familyVisaAvailable: boolean | null;
   hubs: Hub[];
   reviews: Review[];
   visaInfo: VisaInfo[];
@@ -73,7 +75,6 @@ function ScoreBar({ label, value }: { label: string; value: number | null }) {
 
 export default function CityTabs({
   cityId,
-  citySlug,
   costMin,
   costAvg,
   costMax,
@@ -81,6 +82,9 @@ export default function CityTabs({
   safetyScore,
   familyScore,
   internetScore,
+  homeschoolLegal,
+  homeschoolNotes,
+  familyVisaAvailable,
   hubs,
   reviews,
   visaInfo,
@@ -229,37 +233,76 @@ export default function CityTabs({
       {/* Visa & Legal — pro */}
       <TabsContent value="visa">
         <PaywallGate isPro={isPro}>
-          {visaInfo.length === 0 ? (
-            <p className="text-muted-foreground">No visa information available for this city yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {visaInfo.map((v) => (
-                <div key={v.id} className="rounded-lg border bg-card p-4 flex items-start gap-4">
-                  <div className="shrink-0 text-lg font-semibold w-10 text-center">
-                    {v.passportCountry.toUpperCase()}
+          <div className="space-y-6">
+            {/* Family-specific legal info */}
+            {(homeschoolLegal != null || familyVisaAvailable != null) && (
+              <div className="rounded-lg border bg-card p-5 space-y-3">
+                <h3 className="font-semibold">Family &amp; Homeschool</h3>
+                {homeschoolLegal != null && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        homeschoolLegal
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      Homeschooling {homeschoolLegal ? 'legal' : 'restricted'}
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`text-xs font-medium rounded-full px-2 py-0.5 ${
-                          v.visaRequired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                        }`}
-                      >
-                        {v.visaRequired ? 'Visa required' : 'Visa free'}
-                      </span>
-                      {v.visaType && (
-                        <span className="text-xs text-muted-foreground">{v.visaType}</span>
-                      )}
-                      {v.stayDays != null && (
-                        <span className="text-xs text-muted-foreground">Up to {v.stayDays} days</span>
-                      )}
+                )}
+                {homeschoolNotes && (
+                  <p className="text-sm text-muted-foreground">{homeschoolNotes}</p>
+                )}
+                {familyVisaAvailable != null && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        familyVisaAvailable
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      Family visa {familyVisaAvailable ? 'available' : 'not available'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Visa info by passport */}
+            {visaInfo.length === 0 ? (
+              <p className="text-muted-foreground">No visa information available for this city yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {visaInfo.map((v) => (
+                  <div key={v.id} className="rounded-lg border bg-card p-4 flex items-start gap-4">
+                    <div className="shrink-0 text-lg font-semibold w-10 text-center">
+                      {v.passportCountry.toUpperCase()}
                     </div>
-                    {v.notes && <p className="text-sm text-muted-foreground">{v.notes}</p>}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={`text-xs font-medium rounded-full px-2 py-0.5 ${
+                            v.visaRequired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {v.visaRequired ? 'Visa required' : 'Visa free'}
+                        </span>
+                        {v.visaType && (
+                          <span className="text-xs text-muted-foreground">{v.visaType}</span>
+                        )}
+                        {v.stayDays != null && (
+                          <span className="text-xs text-muted-foreground">Up to {v.stayDays} days</span>
+                        )}
+                      </div>
+                      {v.notes && <p className="text-sm text-muted-foreground">{v.notes}</p>}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </PaywallGate>
       </TabsContent>
 
