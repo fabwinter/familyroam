@@ -8,7 +8,7 @@
  * Requires: IQAIR_API_KEY environment variable
  *
  * Usage:
- *   npm run ingest:iqair
+ *   npx ts-node --project tsconfig.scripts.json scripts/ingest-iqair.ts
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -23,21 +23,14 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-interface IQAirCountry {
-  country: string;
-}
-
-interface IQAirCity {
-  city: string;
-}
-
 interface IQAirCityData {
   data: {
     city: string;
+    state: string;
     country: string;
     current: {
       pollution: {
-        aqius: number; // US AQI
+        aqius: number;
         mainus: string;
       };
     };
@@ -46,67 +39,72 @@ interface IQAirCityData {
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`IQAir API error: ${res.status} ${url}`);
+  if (!res.ok) {
+    // Redact API key from logged URL to avoid leaking credentials
+    const safeUrl = url.replace(/key=[^&]+/, 'key=REDACTED');
+    const err = new Error(`IQAir API error: ${res.status} ${safeUrl}`);
+    (err as Error & { status: number }).status = res.status;
+    throw err;
+  }
   return res.json() as Promise<T>;
 }
 
-async function delay(ms: number) {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function main() {
-  console.log('⬇️  Fetching countries from IQAir…');
+  console.log('⬇️  Loading cities from DB…');
 
-  const { data: countries } = await fetchJson<{ data: IQAirCountry[] }>(
-    `${IQAIR_API}/countries?key=${API_KEY}`
-  );
+  const cities = await prisma.city.findMany({
+    select: { id: true, slug: true, name: true, country: true },
+  });
 
-  for (const { country } of countries.slice(0, 10)) {
-    await delay(1200); // respect rate limits
+  console.log(`Found ${cities.length} cities in DB`);
 
-    let cities: IQAirCity[] = [];
+  let updated = 0;
+  let skipped = 0;
+
+  for (const city of cities) {
+    await delay(1000);
+
     try {
-      const res = await fetchJson<{ data: IQAirCity[] }>(
-        `${IQAIR_API}/cities?country=${encodeURIComponent(country)}&key=${API_KEY}`
-      );
-      cities = res.data;
-    } catch {
-      console.warn(`⚠️  Could not fetch cities for ${country}`);
-      continue;
-    }
+      // IQAir requires state; use empty string to let API infer it
+      const url =
+        `${IQAIR_API}/city?city=${encodeURIComponent(city.name)}` +
+        `&state=&country=${encodeURIComponent(city.country)}&key=${API_KEY}`;
 
-    for (const { city } of cities.slice(0, 5)) {
-      await delay(1200);
-      try {
-        const cityData = await fetchJson<IQAirCityData>(
-          `${IQAIR_API}/city?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&key=${API_KEY}`
-        );
+      const cityData = await fetchJson<IQAirCityData>(url);
+      const aqi = cityData.data.current.pollution.aqius;
 
-        const aqi = cityData.data.current.pollution.aqius;
-        const slug = `${city}-${country}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      await prisma.city.upsert({
+        where: { slug: city.slug },
+        create: {
+          slug: city.slug,
+          name: city.name,
+          country: city.country,
+          countryCode: 'XX',
+          latitude: 0,
+          longitude: 0,
+          aqiAvg: aqi,
+        },
+        update: { aqiAvg: aqi },
+      });
 
-        await prisma.city.upsert({
-          where: { slug },
-          create: {
-            slug,
-            name: city,
-            country,
-            countryCode: 'XX',
-            latitude: 0,
-            longitude: 0,
-            aqiAvg: aqi,
-          },
-          update: { aqiAvg: aqi },
-        });
-
-        console.log(`✅ ${city}, ${country} — AQI: ${aqi}`);
-      } catch (err) {
-        console.error(`❌ Failed for ${city}, ${country}:`, err);
+      console.log(`✅ ${city.name}, ${city.country} — AQI: ${aqi}`);
+      updated++;
+    } catch (err) {
+      const status = (err as Error & { status?: number }).status;
+      if (status === 404 || status === 400) {
+        console.log(`⚠️  Skipping ${city.name} (${status} — city/state unknown)`);
+      } else {
+        console.error(`❌ Failed for ${city.name}:`, err);
       }
+      skipped++;
     }
   }
 
-  console.log('Done.');
+  console.log(`\n✅ Updated ${updated} cities, ⚠️ Skipped ${skipped}`);
 }
 
 main()
