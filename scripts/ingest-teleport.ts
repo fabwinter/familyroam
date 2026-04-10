@@ -5,9 +5,10 @@
  * the `cities` table via Prisma.
  *
  * Teleport API docs: https://developers.teleport.org/api/
+ * No API key required.
  *
  * Usage:
- *   npm run ingest:teleport
+ *   npx ts-node --project tsconfig.scripts.json scripts/ingest-teleport.ts
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -16,12 +17,27 @@ const prisma = new PrismaClient();
 
 const TELEPORT_API = 'https://api.teleport.org/api';
 
+interface TeleportUrbanAreaLink {
+  href: string;
+  name: string;
+}
+
 interface TeleportUrbanArea {
-  ua: { href: string; name: string };
+  full_name: string;
+  ua_id: string;
+  _links: {
+    'ua:self': TeleportUrbanAreaLink;
+  };
+}
+
+interface TeleportScoreCategory {
+  color: string;
+  name: string;
+  score_out_of_10: number;
 }
 
 interface TeleportScores {
-  categories: Array<{ color: string; name: string; score_out_of_10: number }>;
+  categories: TeleportScoreCategory[];
   teleport_city_score: number;
 }
 
@@ -31,54 +47,93 @@ async function fetchJson<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Strip country suffix after comma: "Amsterdam, Netherlands" → "amsterdam" */
+function normalise(name: string): string {
+  return name.split(',')[0].trim().toLowerCase();
+}
+
 async function main() {
   console.log('⬇️  Fetching urban areas from Teleport…');
 
-  const { _embedded } = await fetchJson<{ _embedded: { 'ua:urban-areas': TeleportUrbanArea[] } }>(
-    `${TELEPORT_API}/urban_areas/`
-  );
-  const urbanAreas = _embedded['ua:urban-areas'];
+  const listRes = await fetchJson<{
+    _embedded: { 'ua:urban-areas': TeleportUrbanArea[] };
+  }>(`${TELEPORT_API}/urban_areas/`);
+
+  const urbanAreas = listRes._embedded['ua:urban-areas'];
   console.log(`Found ${urbanAreas.length} urban areas`);
 
-  for (const area of urbanAreas) {
-    try {
-      const uaHref = area.ua.href;
-      const name = area.ua.name;
+  // Build a lookup map from normalised city name → DB city
+  const dbCities = await prisma.city.findMany({ select: { id: true, slug: true, name: true } });
+  const cityByName = new Map(dbCities.map((c) => [c.name.toLowerCase(), c]));
+  const cityBySlug = new Map(dbCities.map((c) => [c.slug, c]));
 
-      // Fetch detailed scores
-      const scoresRes = await fetchJson<TeleportScores>(`${uaHref}scores/`);
+  let updated = 0;
+  let skipped = 0;
+
+  for (const area of urbanAreas) {
+    const fullName = area.full_name;
+    const href = area._links['ua:self'].href;
+    const normName = normalise(fullName);
+
+    // Match against DB by name (case-insensitive, country suffix stripped)
+    const dbCity = cityByName.get(normName) ?? cityBySlug.get(normName.replace(/[^a-z0-9]+/g, '-'));
+
+    if (!dbCity) {
+      console.log(`⚠️  No DB match for Teleport area: ${fullName}`);
+      skipped++;
+      continue;
+    }
+
+    try {
+      const scoresRes = await fetchJson<TeleportScores>(`${href}scores/`);
       const scores = scoresRes.categories;
 
-      const safetyCategory = scores.find((c) => c.name === 'Safety');
-      const qualityCategory = scores.find((c) => c.name === 'Quality of Life');
+      const getScore = (categoryName: string) =>
+        scores.find((c) => c.name === categoryName)?.score_out_of_10 ?? null;
 
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const safetyRaw = getScore('Safety');
+      const internetRaw = getScore('Internet Access');
+      const outdoorsRaw = getScore('Outdoors & Nature');
+      const envRaw = getScore('Environmental Quality');
+      const familyRaw = getScore('Family');
+
+      // "Outdoors & Nature" + "Environmental Quality" averaged → qualityOfLife
+      const qualityRaw =
+        outdoorsRaw !== null && envRaw !== null
+          ? (outdoorsRaw + envRaw) / 2
+          : (outdoorsRaw ?? envRaw);
 
       await prisma.city.upsert({
-        where: { slug },
+        where: { slug: dbCity.slug },
         create: {
-          slug,
-          name,
-          country: '',         // enriched by other ingestion scripts
+          slug: dbCity.slug,
+          name: dbCity.name,
+          country: '',
           countryCode: 'XX',
           latitude: 0,
           longitude: 0,
-          safetyScore: safetyCategory ? safetyCategory.score_out_of_10 * 10 : null,
-          qualityOfLife: qualityCategory ? qualityCategory.score_out_of_10 * 10 : null,
+          safetyScore: safetyRaw !== null ? safetyRaw * 10 : null,
+          internetScore: internetRaw !== null ? internetRaw * 10 : null,
+          qualityOfLife: qualityRaw !== null ? qualityRaw * 10 : null,
+          familyScore: familyRaw !== null ? familyRaw * 10 : null,
         },
         update: {
-          safetyScore: safetyCategory ? safetyCategory.score_out_of_10 * 10 : undefined,
-          qualityOfLife: qualityCategory ? qualityCategory.score_out_of_10 * 10 : undefined,
+          safetyScore: safetyRaw !== null ? safetyRaw * 10 : undefined,
+          internetScore: internetRaw !== null ? internetRaw * 10 : undefined,
+          qualityOfLife: qualityRaw !== null ? qualityRaw * 10 : undefined,
+          familyScore: familyRaw !== null ? familyRaw * 10 : undefined,
         },
       });
 
-      console.log(`✅ Upserted: ${name}`);
+      console.log(`✅ Updated: ${fullName}`);
+      updated++;
     } catch (err) {
-      console.error(`❌ Failed for ${area.ua.name}:`, err);
+      console.error(`❌ Failed for ${fullName}:`, err);
+      skipped++;
     }
   }
 
-  console.log('Done.');
+  console.log(`\n✅ Updated ${updated} cities, ⚠️ Skipped ${skipped}`);
 }
 
 main()

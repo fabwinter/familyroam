@@ -15,7 +15,7 @@ FamilyRoam helps families living abroad discover the best cities worldwide, rank
 | Database | Supabase (PostgreSQL) + Prisma ORM |
 | Auth | Supabase Auth |
 | Payments | Stripe |
-| Data | Teleport API, Numbeo, IQAir, OpenStreetMap/Nominatim |
+| Data | Teleport API, WhereNext, IQAir, CostMaps, OpenStreetMap/Nominatim |
 
 ---
 
@@ -103,8 +103,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Data Ingestion
 
-Populate the database with real-world data from external APIs.  Run the
-scripts **in the order listed** for best results.
+Run scripts in this order after initial setup:
+
+1. `npx ts-node --project tsconfig.scripts.json scripts/seed-cities.ts` (base city records)
+2. `npx ts-node --project tsconfig.scripts.json scripts/ingest-teleport.ts` (scores — no key needed)
+3. `npx ts-node --project tsconfig.scripts.json scripts/ingest-wherenext.ts` (cost & visa — no key needed)
+4. `npx ts-node --project tsconfig.scripts.json scripts/ingest-iqair.ts` (AQI — needs IQAIR_API_KEY)
+5. `npx ts-node --project tsconfig.scripts.json scripts/ingest-costmaps.ts` (gap-fill — needs COSTMAPS_API_KEY)
+
+---
+
+## Legacy Data Ingestion (deprecated)
 
 ```bash
 # 1. Quality-of-life scores from Teleport (free, no key required)
@@ -136,8 +145,8 @@ npm run ingest:backfill
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhooks | ✅ |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Dashboard | ✅ |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | Stripe → Products | ✅ |
-| `NUMBEO_API_KEY` | numbeo.com/api | Ingest only |
 | `IQAIR_API_KEY` | iqair.com/dashboard | Ingest only |
+| `COSTMAPS_API_KEY` | costmaps.com → Account → API | Ingest only |
 | `NEXT_PUBLIC_APP_URL` | Your deployment URL | ✅ |
 | `ADMIN_EMAIL` | Your admin e-mail | ✅ |
 
