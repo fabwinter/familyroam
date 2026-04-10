@@ -19,7 +19,8 @@
     "ingest:iqair": "ts-node --project tsconfig.scripts.json scripts/ingest-iqair.ts",
     "ingest:osm": "ts-node --project tsconfig.scripts.json scripts/ingest-osm.ts",
     "ingest:backfill": "ts-node --project tsconfig.scripts.json scripts/backfill-scores.ts",
-    "db:seed": "ts-node --project tsconfig.scripts.json scripts/seed.ts"
+    "db:seed": "ts-node --project tsconfig.scripts.json scripts/seed.ts",
+    "seed:cities": "ts-node --project tsconfig.scripts.json scripts/seed-cities.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
