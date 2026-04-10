@@ -46,7 +46,7 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   });
 
   if (res.status === 429) {
-    console.error('Daily limit reached.');
+    console.error('Daily limit reached. Please wait 24 hours or upgrade your CostMaps API plan.');
     process.exit(1);
   }
 

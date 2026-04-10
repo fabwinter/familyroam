@@ -97,7 +97,8 @@ async function main() {
       const envRaw = getScore('Environmental Quality');
       const familyRaw = getScore('Family');
 
-      // "Outdoors & Nature" + "Environmental Quality" averaged → qualityOfLife
+      // Average "Outdoors & Nature" and "Environmental Quality" for qualityOfLife.
+      // If only one category is available, use that value directly as a fallback.
       const qualityRaw =
         outdoorsRaw !== null && envRaw !== null
           ? (outdoorsRaw + envRaw) / 2

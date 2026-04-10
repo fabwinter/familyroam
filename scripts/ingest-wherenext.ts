@@ -143,6 +143,11 @@ async function main() {
     }
 
     const passportCountry = entry.passport_country.toUpperCase().slice(0, 2);
+    if (passportCountry.length < 2) {
+      console.log(`⚠️  Invalid passport_country "${entry.passport_country}" for ${entry.city} — skipping`);
+      visaSkipped++;
+      continue;
+    }
 
     await prisma.visaInfo.upsert({
       where: {

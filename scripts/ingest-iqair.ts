@@ -40,7 +40,9 @@ interface IQAirCityData {
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
-    const err = new Error(`IQAir API error: ${res.status} ${url}`);
+    // Redact API key from logged URL to avoid leaking credentials
+    const safeUrl = url.replace(/key=[^&]+/, 'key=REDACTED');
+    const err = new Error(`IQAir API error: ${res.status} ${safeUrl}`);
     (err as Error & { status: number }).status = res.status;
     throw err;
   }
