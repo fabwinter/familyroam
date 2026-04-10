@@ -112,6 +112,8 @@ export function validateEnv() {
   // directly in middleware and gracefully redirects if absent.
 
   // Core public vars.
+  // Note: NEXT_PUBLIC_APP_URL is intentionally omitted — it has a code-level
+  // default ('https://familyroam.com') and is not critical for server startup.
   const requiredPublic: Array<[string, string]> = [
     [
       'NEXT_PUBLIC_SUPABASE_URL',
@@ -120,10 +122,6 @@ export function validateEnv() {
     [
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'Supabase → Settings → API → Project API keys → anon / public',
-    ],
-    [
-      'NEXT_PUBLIC_APP_URL',
-      'Your deployment URL, e.g. https://familyroam.com (no trailing slash)',
     ],
   ];
 
