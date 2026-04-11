@@ -6,17 +6,21 @@ export const dynamic = 'force-dynamic';
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://roamingfamilies.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const cities = await prisma.city.findMany({
-    select: { slug: true, updatedAt: true },
-    orderBy: { familyScore: 'desc' },
-  });
-
-  const cityEntries: MetadataRoute.Sitemap = cities.map((c) => ({
-    url: `${BASE}/cities/${c.slug}`,
-    lastModified: c.updatedAt,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
+  let cityEntries: MetadataRoute.Sitemap = [];
+  try {
+    const cities = await prisma.city.findMany({
+      select: { slug: true, updatedAt: true },
+      orderBy: { familyScore: 'desc' },
+    });
+    cityEntries = cities.map((c) => ({
+      url: `${BASE}/cities/${c.slug}`,
+      lastModified: c.updatedAt,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
+  } catch (err) {
+    console.error('Sitemap: failed to fetch cities from DB:', err);
+  }
 
   return [
     { url: BASE, changeFrequency: 'weekly', priority: 1.0 },
