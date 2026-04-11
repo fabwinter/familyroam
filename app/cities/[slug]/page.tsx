@@ -10,16 +10,20 @@ interface CityDetailPageProps {
 
 export async function generateMetadata({ params }: CityDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const city = await prisma.city.findUnique({ where: { slug }, select: { name: true, country: true, description: true } });
-  if (!city) return {};
-  return {
-    title: `${city.name}, ${city.country}`,
-    description: city.description ?? undefined,
-    openGraph: {
-      title: `${city.name}, ${city.country} — Roaming Families`,
+  try {
+    const city = await prisma.city.findUnique({ where: { slug }, select: { name: true, country: true, description: true } });
+    if (!city) return {};
+    return {
+      title: `${city.name}, ${city.country}`,
       description: city.description ?? undefined,
-    },
-  };
+      openGraph: {
+        title: `${city.name}, ${city.country} — Roaming Families`,
+        description: city.description ?? undefined,
+      },
+    };
+  } catch {
+    return {};
+  }
 }
 
 export default async function CityDetailPage({ params }: CityDetailPageProps) {

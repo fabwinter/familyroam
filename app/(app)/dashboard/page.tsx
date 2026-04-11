@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import type { Plan } from '@prisma/client';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 import CityCard from '@/components/CityCard';
@@ -10,41 +12,67 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (err) {
+    console.error('Dashboard: auth check failed:', err);
+  }
 
-  const [reviewCount, savedCities, dbUser] = await Promise.all([
-    user ? prisma.review.count({ where: { userId: user.id } }) : 0,
-    user
-      ? prisma.savedCity.findMany({
-          where: { userId: user.id },
-          include: {
-            city: {
-              select: {
-                id: true,
-                slug: true,
-                name: true,
-                country: true,
-                costAvg: true,
-                safetyScore: true,
-                familyScore: true,
-                imageUrl: true,
-              },
+  if (!user) {
+    redirect('/auth/login');
+  }
+
+  let reviewCount = 0;
+  let savedCities: Array<{
+    userId: string;
+    cityId: string;
+    createdAt: Date;
+    city: {
+      id: string;
+      slug: string;
+      name: string;
+      country: string;
+      costAvg: number | null;
+      safetyScore: number | null;
+      familyScore: number | null;
+      imageUrl: string | null;
+    };
+  }> = [];
+  let dbUser: { plan: Plan; stripeCustomerId: string | null } | null = null;
+
+  try {
+    [reviewCount, savedCities, dbUser] = await Promise.all([
+      prisma.review.count({ where: { userId: user.id } }),
+      prisma.savedCity.findMany({
+        where: { userId: user.id },
+        include: {
+          city: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              country: true,
+              costAvg: true,
+              safetyScore: true,
+              familyScore: true,
+              imageUrl: true,
             },
           },
-          orderBy: { createdAt: 'desc' },
-          take: 12,
-        })
-      : [],
-    user
-      ? prisma.user.findUnique({
-          where: { id: user.id },
-          select: { plan: true, stripeCustomerId: true },
-        })
-      : null,
-  ]);
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 12,
+      }),
+      prisma.user.findUnique({
+        where: { id: user.id },
+        select: { plan: true, stripeCustomerId: true },
+      }),
+    ]);
+  } catch (err) {
+    console.error('Dashboard: database query failed:', err);
+  }
 
   const plan = dbUser?.plan ?? 'FREE';
   const savedCount = savedCities.length;

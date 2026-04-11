@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import type { Plan } from '@prisma/client';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 import PlannerClient from './_PlannerClient';
@@ -9,20 +11,29 @@ export const metadata: Metadata = {
 };
 
 export default async function PlannerPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (err) {
+    console.error('Planner: auth check failed:', err);
+  }
 
   // Middleware already redirects unauthenticated users, but guard just in case.
   if (!user) {
-    return null;
+    redirect('/auth/login');
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { plan: true },
-  });
+  let dbUser: { plan: Plan } | null = null;
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { plan: true },
+    });
+  } catch (err) {
+    console.error('Planner: database query failed:', err);
+  }
 
   if (dbUser?.plan !== 'PRO') {
     return (
